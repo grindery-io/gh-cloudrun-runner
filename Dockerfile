@@ -20,7 +20,7 @@ RUN chown -R actions ~actions && /home/actions/actions-runner/bin/installdepende
 RUN apt-get install -yqq python3 python3-pip
 
 COPY requirements.txt requirements.txt
-RUN pip3 install --break-system-packages -r requirements.txt
+RUN pip3 install -r requirements.txt
 
 USER actions
 COPY main.py main.py
