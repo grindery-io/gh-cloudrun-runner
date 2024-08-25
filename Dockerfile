@@ -3,7 +3,7 @@ FROM ubuntu:24.04
 ENV RUNNER_VERSION=2.319.1
 
 RUN useradd -m actions
-RUN apt-get -yqq update && apt-get install -yqq curl jq wget
+RUN apt-get -yqq update && apt-get install -yqq curl jq wget libicu
 
 RUN \
   latest_version_label="$(curl -s -X GET 'https://api.github.com/repos/actions/runner/releases/latest' | jq -r '.tag_name')" \
