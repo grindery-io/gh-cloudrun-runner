@@ -1,6 +1,6 @@
-FROM ubuntu:18.04
+FROM ubuntu:24.04
 
-ENV RUNNER_VERSION=2.291.1
+ENV RUNNER_VERSION=2.319.1
 
 RUN useradd -m actions
 RUN apt-get -yqq update && apt-get install -yqq curl jq wget
