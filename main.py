@@ -95,6 +95,7 @@ def idle_monitor():
     response = requests.get(url=registration_token_url, headers=headers)
     if response.status_code != 200:
         LOGGER.error('idle monitor error: %s', response.text)
+        return
     
     response_json = json.loads(response.text)
     for runner in response_json["runners"]:
