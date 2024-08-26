@@ -1,8 +1,12 @@
-FROM ghcr.io/catthehacker/ubuntu:js-22.04
+FROM ghcr.io/catthehacker/ubuntu:act-22.04
 
 ENV RUNNER_VERSION=2.319.1
 
 RUN useradd -m actions
+RUN apt-get -yqq update && apt-get install -yqq apt-transport-https ca-certificates gnupg curl python3 python3-pip \
+  && curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | gpg --dearmor -o /usr/share/keyrings/cloud.google.gpg \
+  && echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | tee -a /etc/apt/sources.list.d/google-cloud-sdk.list \
+  && apt-get update && apt-get install google-cloud-cli kubectl google-cloud-cli-gke-gcloud-auth-plugin 
 
 RUN \
   latest_version_label="$(curl -s -X GET 'https://api.github.com/repos/actions/runner/releases/latest' | jq -r '.tag_name')" \
@@ -15,8 +19,6 @@ RUN \
 
 WORKDIR /home/actions/actions-runner
 RUN chown -R actions ~actions && /home/actions/actions-runner/bin/installdependencies.sh
-
-RUN apt-get install -yqq python3 python3-pip
 
 COPY requirements.txt requirements.txt
 RUN pip3 install -r requirements.txt
