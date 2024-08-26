@@ -8,6 +8,8 @@ import requests
 import json
 import random
 import string
+import threading
+import time
 
 from flask import Flask
 from flask import request
@@ -32,6 +34,7 @@ app = Flask(app_name)
 token = os.environ.get('TOKEN')
 organization = os.environ.get('ORGANIZATION')
 runner_name_prefix = os.environ.get('NAME')
+runner_name_full = ''
 reg_token = None
 
 
@@ -54,8 +57,10 @@ def get_token():
 
 
 def cleanup():
-    LOGGER.info('cleaning up the instance...')
     global reg_token
+    if not reg_token:
+        return
+    LOGGER.info('cleaning up the instance...')
     cleanup_call = subprocess.run([f'./config.sh remove --token "{reg_token}"'],
                                   shell=True, stdout=subprocess.PIPE)
     LOGGER.info(cleanup_call.stdout)
@@ -68,13 +73,41 @@ def setup():
     runner_name_suffix = '-' + ''.join(random.choices(string.ascii_lowercase + string.digits, k=5))
     global reg_token
     reg_token = get_token()
-    setup_call = subprocess.run([f'./config.sh --url "{organization_url}" --token "{reg_token}" --name "{runner_name_prefix + runner_name_suffix}" --unattended --ephemeral --work _work'], shell=True, stdout=subprocess.PIPE)
+    global runner_name_full
+    runner_name_full = runner_name_prefix + runner_name_suffix
+    setup_call = subprocess.run([f'./config.sh --url "{organization_url}" --token "{reg_token}" --name "{runner_name_full}" --unattended --ephemeral --work _work'], shell=True, stdout=subprocess.PIPE)
     LOGGER.info(setup_call.stdout)
 
 
 def run():
     run_call = subprocess.run(['./run.sh'], shell=True, stdout=subprocess.PIPE)
     LOGGER.info(run_call.stdout)
+
+
+def idle_monitor():
+    global reg_token
+    tok = reg_token
+    time.sleep(10)
+    if tok != reg_token:
+        return
+    registration_token_url = f'https://api.github.com/orgs/{organization}/actions/runners?per_page=100'
+    headers = {'authorization': f'token {token}', 'Accept': 'application/vnd.github.v3+json'}
+    response = requests.get(url=registration_token_url, headers=headers)
+    if response.status_code != 200:
+        LOGGER.error('idle monitor error: %s', response.text)
+    
+    response_json = json.loads(response.text)
+    for runner in response_json["runners"]:
+        if runner["name"] != runner_name_full:
+            continue
+
+        if not runner["busy"]:
+            LOGGER.info('idle monitor: runner idling, exiting')
+            cleanup()
+        
+        break
+    else:
+        LOGGER.warn("idle monitor: can't find current runner")
 
 
 @app.route('/', methods=['GET', 'POST'])
@@ -88,6 +121,8 @@ def start():
             action = req_body['action']
             if action == 'queued':
                 setup()
+                t = threading.Thread(target=idle_monitor)
+                t.start()
                 run()
                 # cleanup is not necessary for ephemeral setup.
                 # when the job completes, both the .credentials and .runner files are deleted by default.
