@@ -1,4 +1,4 @@
-FROM ghcr.io/catthehacker/ubuntu:act-22.04
+FROM ghcr.io/catthehacker/ubuntu:js-22.04
 
 ENV RUNNER_VERSION=2.319.1
 
