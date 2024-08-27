@@ -37,6 +37,7 @@ runner_name_prefix = os.environ.get('NAME')
 runner_name_full = ''
 reg_token = None
 
+os.environ['TOKEN'] = ''
 
 def check_system():
     if token is None or organization is None:
