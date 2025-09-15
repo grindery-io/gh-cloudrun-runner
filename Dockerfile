@@ -1,6 +1,6 @@
-FROM ghcr.io/catthehacker/ubuntu:js-22.04
+FROM ghcr.io/catthehacker/ubuntu:js-24.04
 
-ENV RUNNER_VERSION=2.319.1
+ENV RUNNER_VERSION=2.328.0
 
 RUN useradd -m actions
 RUN apt-get -yqq update && apt-get install -yqq apt-transport-https ca-certificates gnupg curl python3 python3-pip \
